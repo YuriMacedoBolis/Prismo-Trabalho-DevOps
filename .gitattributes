@@ -1,0 +1,47 @@
+# =============================================================================
+#  Normalizacao de fim de linha.
+#
+#  Este repositorio constroi imagens Linux e sera implantado em Linux, mas e
+#  desenvolvido em Windows, onde o git costuma vir com core.autocrlf=true.
+#  Sem este arquivo, um clone no Windows traria CRLF para a arvore de trabalho,
+#  e dai: `make` falha no Linux (a regra com \r nao e reconhecida), scripts de
+#  entrypoint quebram dentro do container com "bad interpreter: no such file or
+#  directory", e o Dockerfile pode cortar comandos no \r.
+#
+#  `eol=lf` forca LF tanto no repositorio quanto na arvore de trabalho, em
+#  qualquer sistema operacional. O Windows moderno (VS Code, PowerShell,
+#  Notepad) lida com LF sem problema.
+# =============================================================================
+
+# Padrao: tudo e texto e fica em LF
+* text=auto eol=lf
+
+# Arquivos onde LF e obrigatorio, nao preferencia
+Makefile        text eol=lf
+*.sh            text eol=lf
+Dockerfile      text eol=lf
+*.Dockerfile    text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+*.py            text eol=lf
+*.json          text eol=lf
+*.html          text eol=lf
+*.css           text eol=lf
+*.js            text eol=lf
+*.md            text eol=lf
+*.puml          text eol=lf
+.env.example    text eol=lf
+
+# Scripts de PowerShell: CRLF e o esperado no Windows
+*.ps1           text eol=crlf
+
+# Binarios: nunca normalizar
+*.png           binary
+*.jpg           binary
+*.jpeg          binary
+*.gif           binary
+*.webp          binary
+*.ico           binary
+*.woff          binary
+*.woff2         binary
+*.pdf           binary

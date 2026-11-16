@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+  <p class="eyebrow" data-anim="fade">
+    <span class="dot"></span> Fase 1 · fundacao no ar
+  </p>
+
+  {# data-anim="reveal" faz o app.js quebrar o texto em palavras e subir cada
+     uma com atraso progressivo. #}
+  <h1 class="hero__title" data-anim="reveal">
+    Seu portfolio, sempre atualizado.
+  </h1>
+
+  <p class="hero__lead" data-anim="fade" data-delay="0.3">
+    Conecte o GitHub uma vez. O Prismo importa seus projetos, reordena os mais
+    relevantes no topo e cuida do SEO — sem voce tocar em nada.
+  </p>
+
+  <div class="hero__cta" data-anim="fade" data-delay="0.45">
+    <a class="btn btn--primary" href="/status" data-magnetic>Ver status dos servicos</a>
+    <a class="btn btn--ghost" href="/docs" data-magnetic>Explorar a API</a>
+  </div>
+</section>
+
+<section class="bento">
+  <article class="card card--wide" data-anim="rise">
+    <span class="card__tag">Importacao automatica</span>
+    <h2>O GitHub como fonte de verdade</h2>
+    <p>
+      Um worker sincroniza seus repositorios a cada 30 minutos: nome, descricao,
+      linguagem, estrelas e data da ultima alteracao. Projeto novo publicado
+      aparece no portfolio sozinho.
+    </p>
+    <div class="card__meta">
+      <code>GET /user/repos</code>
+      <span>Celery · a cada 30 min</span>
+    </div>
+  </article>
+
+  <article class="card" data-anim="rise">
+    <span class="card__tag">Destaque dinamico</span>
+    <h2>O topo se reorganiza</h2>
+    <p>Score por recencia, engajamento e completude. Pin manual vence o algoritmo.</p>
+    <pre class="formula">score = 0.40·recencia
+      + 0.25·engajamento
+      + 0.20·pin
+      + 0.15·completude</pre>
+  </article>
+
+  <article class="card" data-anim="rise">
+    <span class="card__tag">SEO por padrao</span>
+    <h2>Encontravel sem esforco</h2>
+    <p>
+      Meta tags, Open Graph, JSON-LD, sitemap e URL amigavel gerados por
+      portfolio. Renderizacao no servidor com cache em Redis.
+    </p>
+  </article>
+
+  <article class="card" data-anim="rise">
+    <span class="card__tag">Temas visuais</span>
+    <h2>Quatro identidades</h2>
+    <div class="swatches">
+      <button class="swatch swatch--midnight" data-theme-set="midnight" title="Midnight"></button>
+      <button class="swatch swatch--aurora" data-theme-set="aurora" title="Aurora"></button>
+      <button class="swatch swatch--brutalist" data-theme-set="brutalist" title="Brutalist"></button>
+      <button class="swatch swatch--paper" data-theme-set="paper" title="Paper"></button>
+    </div>
+    <p class="card__hint">Clique para pre-visualizar. A troca persistida por usuario entra na Fase 4.</p>
+  </article>
+
+  <article class="card card--wide" data-anim="rise">
+    <span class="card__tag">Export estatico</span>
+    <h2>Leve seu portfolio embora</h2>
+    <p>
+      Um clique gera um <code>.zip</code> com HTML e CSS puros, hospedavel em
+      qualquer lugar. Sem dependencia da plataforma, sem refem de ferramenta.
+    </p>
+  </article>
+</section>
+
+<section class="stack" data-anim="rise">
+  <h2 class="section__title">Arquitetura</h2>
+  <p class="section__lead">
+    Sete servicos independentes, orquestrados em Docker e preparados para
+    escalar em Kubernetes.
+  </p>
+  <div class="chips">
+    <span class="chip chip--live">gateway</span>
+    <span class="chip chip--live">web</span>
+    <span class="chip">auth</span>
+    <span class="chip">portfolio</span>
+    <span class="chip">sync</span>
+    <span class="chip">worker</span>
+    <span class="chip">seo</span>
+    <span class="chip chip--infra">redis</span>
+    <span class="chip chip--infra">supabase</span>
+    <span class="chip chip--infra">prometheus</span>
+    <span class="chip chip--infra">grafana</span>
+  </div>
+  <p class="card__hint">Em destaque: no ar nesta fase. Os demais entram nas fases 2 e 3.</p>
+</section>
+{% endblock %}

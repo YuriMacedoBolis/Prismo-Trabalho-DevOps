@@ -1,0 +1,42 @@
+# --- Segredos: o mais importante deste arquivo ------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+google-sa.json
+*-service-account*.json
+
+# --- Python -----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# --- Node (build do CSS) ----------------------------------------------------
+node_modules/
+services/web/static/css/tailwind.build.css
+
+# --- Ferramentas ------------------------------------------------------------
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+
+# --- Sistema operacional ----------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Artefatos locais -------------------------------------------------------
+*.log
+exports/
+tmp/

@@ -1,0 +1,11 @@
+# Dependencias comuns a todos os servicos do Prismo.
+# Versoes fixadas: build reproduzivel e sem surpresa entre a maquina de cada
+# integrante, o CI e o cluster.
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+pydantic-settings==2.7.0
+structlog==24.4.0
+prometheus-client==0.21.1
+httpx==0.28.1
+redis==5.2.1

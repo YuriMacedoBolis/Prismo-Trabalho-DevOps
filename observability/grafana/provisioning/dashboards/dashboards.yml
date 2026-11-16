@@ -1,0 +1,16 @@
+# Carrega os dashboards versionados em observability/grafana/dashboards/.
+# Dashboard no Git e dashboard que nao se perde quando o container e recriado.
+
+apiVersion: 1
+
+providers:
+  - name: prismo
+    orgId: 1
+    folder: Prismo
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

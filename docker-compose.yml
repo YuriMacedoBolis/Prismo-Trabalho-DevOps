@@ -1,0 +1,123 @@
+# =============================================================================
+#  Prismo — stack de aplicacao (Fase 1)
+#
+#  Suba com:  docker compose up --build
+#  Com observabilidade:  docker compose -f docker-compose.yml -f docker-compose.obs.yml up --build
+#  Com Postgres local em vez do Supabase:  docker compose --profile local-db up
+#
+#  Note o `context: .` em todos os builds: o contexto e a raiz do repositorio
+#  porque cada imagem precisa copiar `shared/` junto com o seu proprio codigo.
+# =============================================================================
+
+name: prismo
+
+x-app-common: &app-common
+  restart: unless-stopped
+  env_file: [.env]
+  networks: [prismo]
+  # Limites de recurso. Em producao o equivalente sao `requests` e `limits` no
+  # Deployment do Kubernetes, e e deles que o HPA se serve para decidir
+  # escalar. Definir aqui evita que um servico com vazamento de memoria
+  # derrube a maquina de quem desenvolve.
+  deploy:
+    resources:
+      limits: { cpus: "1.0", memory: 512M }
+      reservations: { cpus: "0.1", memory: 128M }
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }
+
+services:
+  # ---------------------------------------------------------------------------
+  #  Redis — cache, fila do Celery, rate limiting e locks distribuidos.
+  #  Unico servico com estado dentro do cluster (o banco e o Supabase).
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7.4-alpine
+    container_name: prismo-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    # allkeys-lru: ao encher, o Redis descarta a chave menos usada em vez de
+    # recusar escrita. Correto aqui porque todo o conteudo e descartavel:
+    # cache perdido se refaz, e a verdade esta sempre no Supabase.
+    ports: ["6379:6379"]
+    volumes: [redis-data:/data]
+    networks: [prismo]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  # ---------------------------------------------------------------------------
+  #  Gateway — unico servico da API exposto para fora.
+  # ---------------------------------------------------------------------------
+  gateway:
+    <<: *app-common
+    build:
+      context: .
+      dockerfile: services/gateway/Dockerfile
+    image: prismo/gateway:0.1.0
+    container_name: prismo-gateway
+    environment:
+      SERVICE_NAME: gateway
+    ports: ["8001:8000"]
+    depends_on:
+      redis: { condition: service_healthy }
+
+  # ---------------------------------------------------------------------------
+  #  Web — renderizacao server-side (landing, status, portfolio publico).
+  # ---------------------------------------------------------------------------
+  web:
+    <<: *app-common
+    build:
+      context: .
+      dockerfile: services/web/Dockerfile
+    image: prismo/web:0.1.0
+    container_name: prismo-web
+    environment:
+      SERVICE_NAME: web
+    ports: ["8000:8000"]
+    depends_on:
+      redis: { condition: service_healthy }
+      gateway: { condition: service_started }
+
+  # ---------------------------------------------------------------------------
+  #  Postgres local — OPCIONAL, perfil `local-db`.
+  #
+  #  O banco do projeto e o Supabase. Este container existe por dois motivos:
+  #    1. desenvolver e rodar teste sem rede e sem gastar cota;
+  #    2. poder demonstrar PersistentVolumeClaim e StatefulSet no Kubernetes,
+  #       que o Supabase gerenciado nao permite mostrar.
+  #  Supabase e Postgres, entao e so trocar DATABASE_URL: zero mudanca de codigo.
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: prismo-postgres
+    profiles: ["local-db"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: prismo
+      POSTGRES_PASSWORD: prismo
+      POSTGRES_DB: prismo
+    ports: ["5432:5432"]
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    networks: [prismo]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U prismo -d prismo"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+networks:
+  prismo:
+    driver: bridge
+
+volumes:
+  redis-data:
+  postgres-data:

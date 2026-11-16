@@ -1,0 +1,2 @@
+# Dependencias exclusivas do servico web.
+jinja2==3.1.5

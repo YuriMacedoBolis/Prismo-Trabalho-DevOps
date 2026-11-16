@@ -1,0 +1,16 @@
+# Provisionamento automatico do datasource.
+# Sem isto, alguem teria de clicar na interface do Grafana a cada ambiente
+# novo, e o painel nao seria reproduzivel. Infraestrutura como codigo vale
+# tambem para o monitoramento.
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      timeInterval: 15s

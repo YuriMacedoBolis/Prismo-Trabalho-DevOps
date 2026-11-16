@@ -1,0 +1,57 @@
+# =============================================================================
+#  Prismo — observabilidade (overlay)
+#
+#  Versao enxuta, por decisao do grupo: dois containers em vez dos seis de uma
+#  stack completa. Prometheus coleta, Grafana mostra. Os logs ficam
+#  estruturados em JSON na saida padrao, legiveis com `docker compose logs` e
+#  `kubectl logs`, sem precisar de Loki. Tracing (Jaeger) fica como extensao.
+#
+#  O cAdvisor foi removido: no Docker Desktop com WSL2 ele sobe saudavel mas
+#  nao consegue mapear cgroup para nome de container, e publica zero series
+#  com o label `name`. As metricas de recurso por servico vem do proprio
+#  /metrics de cada aplicacao (process_resident_memory_bytes), que o cliente
+#  Prometheus expoe sozinho. Ver docs/decisoes/003.
+#
+#  Uso:
+#    docker compose -f docker-compose.yml -f docker-compose.obs.yml up -d
+# =============================================================================
+
+name: prismo
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: prismo-prometheus
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=7d"
+      - "--web.enable-lifecycle"
+    ports: ["9090:9090"]
+    volumes:
+      - ./observability/prometheus:/etc/prometheus:ro
+      - prometheus-data:/prometheus
+    networks: [prismo]
+
+  grafana:
+    image: grafana/grafana:11.2.2
+    container_name: prismo-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: prismo
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    ports: ["3000:3000"]
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    depends_on: [prometheus]
+    networks: [prismo]
+
+volumes:
+  prometheus-data:
+  grafana-data:

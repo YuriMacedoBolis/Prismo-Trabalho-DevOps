@@ -1,0 +1,120 @@
+@startuml componentes
+' =============================================================================
+'  Prismo — Diagrama de componentes (UML)
+'
+'  Renderizar:
+'    - VS Code: extensao "PlantUML" (Alt+D para pre-visualizar)
+'    - CLI: plantuml docs/uml/componentes.puml
+'    - Online: plantuml.com/plantuml
+'
+'  Diagrama em texto e diagrama que versiona no Git: o histórico mostra como a
+'  arquitetura evoluiu, o que uma imagem exportada nao permite.
+' =============================================================================
+
+skinparam backgroundColor #0E0E18
+skinparam defaultFontName Inter
+skinparam shadowing false
+skinparam ArrowColor #7C5CFF
+skinparam componentBorderColor #7C5CFF
+skinparam componentBackgroundColor #16162A
+skinparam componentFontColor #F2F2F7
+skinparam databaseBorderColor #22D3EE
+skinparam databaseBackgroundColor #0A2430
+skinparam databaseFontColor #F2F2F7
+skinparam cloudBorderColor #F472B6
+skinparam cloudBackgroundColor #2A1020
+skinparam cloudFontColor #F2F2F7
+skinparam packageBorderColor #44445A
+skinparam packageFontColor #9A9AAE
+skinparam noteBackgroundColor #1C1C2E
+skinparam noteBorderColor #44445A
+skinparam noteFontColor #9A9AAE
+
+title Prismo — Componentes
+
+actor "Visitante" as visitante
+actor "Profissional" as dono
+
+package "Borda" {
+  component "Ingress NGINX" as ingress
+}
+
+package "Aplicacao" {
+  component "web\n(SSR, Jinja2)" as web
+  component "gateway\n(JWT, rate limit)" as gateway
+  component "auth\n(contas, OAuth)" as auth
+  component "portfolio\n(projetos, score)" as portfolio
+  component "sync\n(conector GitHub)" as sync
+  component "worker\n(Celery + Beat)" as worker
+  component "seo\n(meta, sitemap)" as seo
+}
+
+package "Estado" {
+  database "Redis\ncache · fila · locks" as redis
+}
+
+cloud "Supabase\n(Postgres)" as supabase
+cloud "GitHub API" as github
+cloud "Google Drive" as drive
+
+package "Observabilidade" {
+  component "Prometheus" as prometheus
+  component "Grafana" as grafana
+}
+
+visitante --> ingress : HTTPS
+dono --> ingress : HTTPS
+
+ingress --> web : portfolio publico
+ingress --> gateway : /api/v1/**
+
+web --> redis : cache de HTML\ne de midia
+web --> portfolio : le conteudo
+web --> seo : meta tags
+
+gateway --> redis : contador de\nrate limit
+gateway --> auth
+gateway --> portfolio
+gateway --> sync
+gateway --> seo
+
+auth --> supabase
+portfolio --> supabase
+seo --> supabase
+
+sync --> redis : enfileira tarefa
+worker --> redis : consome fila
+worker --> github : importa repos
+worker --> drive : grava thumbnails
+worker --> supabase : grava projetos
+worker --> portfolio : recalcula score
+
+prometheus --> gateway : raspa /metrics
+prometheus --> web : raspa /metrics
+prometheus --> auth : raspa /metrics
+prometheus --> portfolio : raspa /metrics
+prometheus --> sync : raspa /metrics
+prometheus --> seo : raspa /metrics
+grafana --> prometheus : consulta
+
+note right of prometheus
+  Dois containers, nao seis. Cada /metrics
+  ja traz recurso por processo
+  (process_resident_memory_bytes), entao
+  nao ha cAdvisor. Ver ADR 003.
+end note
+
+note right of worker
+  Alvo do HorizontalPodAutoscaler.
+  Escala pelo tamanho da fila: a
+  carga de sincronizacao e irregular
+  por natureza.
+end note
+
+note bottom of redis
+  Unico componente com estado
+  dentro do cluster. E nele que
+  demonstramos PVC e StatefulSet.
+end note
+
+@enduml

@@ -1,0 +1,58 @@
+# =============================================================================
+#  Regras de alerta.
+#
+#  Na Fase 1 os alertas apenas disparam e aparecem na aba Alerts do Prometheus
+#  e nos paineis do Grafana. Encaminhar para e-mail ou Discord exige um
+#  Alertmanager, que fica como extensao.
+#
+#  Criterio usado para escrever alerta: cada regra descreve um sintoma que o
+#  usuario sente, nao uma causa interna. Alertar em "CPU alta" gera ruido;
+#  alertar em "latencia alta" aponta problema real.
+# =============================================================================
+
+groups:
+  - name: disponibilidade
+    rules:
+      - alert: ServicoIndisponivel
+        expr: up{job="prismo-servicos"} == 0
+        for: 1m
+        labels: { severidade: critica }
+        annotations:
+          resumo: "Servico {{ $labels.servico }} nao responde"
+          descricao: "O Prometheus nao consegue coletar metricas de {{ $labels.servico }} ha 1 minuto."
+
+      - alert: ReinicioEmLoop
+        expr: increase(prismo_service_starts_total[10m]) > 3
+        for: 2m
+        labels: { severidade: alta }
+        annotations:
+          resumo: "{{ $labels.service }} reiniciou mais de 3 vezes em 10 min"
+          descricao: "Provavel crash loop. Verifique os logs e a liveness probe."
+
+  - name: desempenho
+    rules:
+      - alert: LatenciaAlta
+        # p95 acima de 1s por 5 minutos. Usamos p95 e nao a media porque a
+        # media esconde exatamente as requisicoes lentas que incomodam.
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (service, le) (rate(prismo_http_request_duration_seconds_bucket[5m]))
+          ) > 1
+        for: 5m
+        labels: { severidade: media }
+        annotations:
+          resumo: "p95 acima de 1s em {{ $labels.service }}"
+          descricao: "95% das requisicoes passaram a demorar mais de 1 segundo."
+
+      - alert: TaxaDeErroAlta
+        expr: |
+          sum by (service) (rate(prismo_http_requests_total{status=~"5.."}[5m]))
+          /
+          sum by (service) (rate(prismo_http_requests_total[5m]))
+          > 0.05
+        for: 3m
+        labels: { severidade: alta }
+        annotations:
+          resumo: "Mais de 5% de erro 5xx em {{ $labels.service }}"
+          descricao: "A taxa de erro de servidor passou de 5% das requisicoes."

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Status{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <h1 data-anim="reveal">Status dos servicos</h1>
+  <p class="hero__lead" data-anim="fade" data-delay="0.2">
+    Lido ao vivo do endpoint <code>/ready</code> de cada servico, consultado em
+    paralelo no servidor.
+    <strong>{{ total_online }} de {{ total }}</strong> respondendo.
+  </p>
+</section>
+
+<section class="status-grid">
+  {% for s in servicos %}
+  <article class="status-card status-card--{{ s.estado }}" data-anim="rise">
+    <header>
+      <span class="pulse pulse--{{ s.estado }}" aria-hidden="true"></span>
+      <h2>{{ s.nome }}</h2>
+      {% if s.latencia_ms is not none %}
+      <span class="latency">{{ s.latencia_ms }} ms</span>
+      {% endif %}
+    </header>
+    <p class="status-card__desc">{{ s.descricao }}</p>
+    <p class="status-card__state">{{ s.estado }}</p>
+
+    {% if s.dependencias %}
+    <ul class="deps">
+      {% for nome, info in s.dependencias.items() %}
+      <li class="dep dep--{{ 'ok' if info.ok else 'fail' }}">
+        <span>{{ nome }}</span>
+        <span>{{ 'ok' if info.ok else info.get('error', 'falha') }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </article>
+  {% endfor %}
+</section>
+
+<section class="stack" data-anim="rise">
+  <h2 class="section__title">Previstos</h2>
+  <ul class="planned">
+    {% for nome, descricao, fase in planejados %}
+    <li>
+      <span class="planned__name">{{ nome }}</span>
+      <span class="planned__desc">{{ descricao }}</span>
+      <span class="badge">{{ fase }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

@@ -1,0 +1,43 @@
+# =============================================================================
+#  Prometheus — configuracao de coleta
+#
+#  Modelo de pull: o Prometheus vai buscar as metricas em /metrics de cada
+#  servico a cada 15s. A aplicacao nao precisa saber que o Prometheus existe,
+#  o que mantem os servicos desacoplados do monitoramento.
+#
+#  Na Fase 5 os `static_configs` dao lugar a descoberta automatica de pods
+#  (`kubernetes_sd_configs`), e o Prometheus passa a encontrar sozinho as
+#  replicas novas criadas pelo HPA.
+# =============================================================================
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    projeto: prismo
+    ambiente: dev
+
+rule_files:
+  - /etc/prometheus/alertas.yml
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: prismo-servicos
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["gateway:8000"]
+        labels: { servico: gateway, camada: api }
+      - targets: ["web:8000"]
+        labels: { servico: web, camada: frontend }
+      # Fases 2 e 3: descomentar conforme cada servico sobe.
+      # - targets: ["auth:8000"]
+      #   labels: { servico: auth, camada: api }
+      # - targets: ["portfolio:8000"]
+      #   labels: { servico: portfolio, camada: api }
+      # - targets: ["sync:8000"]
+      #   labels: { servico: sync, camada: api }
+      # - targets: ["seo:8000"]
+      #   labels: { servico: seo, camada: api }

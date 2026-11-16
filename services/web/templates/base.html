@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="midnight">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  {# As meta tags sao escritas aqui a mao na Fase 1. Na Fase 3 passam a ser
+     geradas pelo seo-svc, por portfolio, junto com Open Graph e JSON-LD. #}
+  <title>{% block title %}{{ titulo }}{% endblock %} · Prismo</title>
+  <meta name="description" content="{% block description %}Portfolio que se atualiza sozinho a partir do seu GitHub.{% endblock %}">
+  <meta name="theme-color" content="#0a0a0f">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  {# Fundo de malha animado: tres gradientes radiais em deriva lenta.
+     CSS puro, sem custo de JavaScript. #}
+  <div class="mesh" aria-hidden="true">
+    <span class="mesh__blob mesh__blob--a"></span>
+    <span class="mesh__blob mesh__blob--b"></span>
+    <span class="mesh__blob mesh__blob--c"></span>
+    <span class="mesh__grain"></span>
+  </div>
+
+  <header class="nav">
+    <a class="nav__brand" href="/">
+      <span class="nav__mark" aria-hidden="true"></span>
+      Prismo
+    </a>
+    <nav class="nav__links">
+      <a href="/status">Status</a>
+      <a href="/docs">API</a>
+      <span class="badge badge--env">{{ ambiente }}</span>
+    </nav>
+  </header>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <p>Prismo · Projeto 14 — SaaS de portfolio com atualizacao automatica</p>
+    <p class="footer__dim">FastAPI · Docker · Kubernetes · Supabase · Redis</p>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+  <script src="/static/js/app.js" defer></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

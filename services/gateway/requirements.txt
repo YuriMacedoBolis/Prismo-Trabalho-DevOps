@@ -1,0 +1,4 @@
+# Dependencias exclusivas do gateway.
+# As comuns estao em shared/requirements.txt e sao instaladas antes desta,
+# em uma camada de cache separada no Dockerfile.
+python-jose[cryptography]==3.3.0
