@@ -1,0 +1,2 @@
+# O seo so le o portfolio pelo gateway interno e gera XML/JSON-LD.
+# Sem dependencia exclusiva.

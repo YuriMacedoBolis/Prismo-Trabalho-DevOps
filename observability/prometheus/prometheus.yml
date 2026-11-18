@@ -36,8 +36,9 @@ scrape_configs:
         labels: { servico: auth, camada: api }
       - targets: ["portfolio:8000"]
         labels: { servico: portfolio, camada: api }
-      # Fase 3: descomentar conforme cada servico sobe.
-      # - targets: ["sync:8000"]
-      #   labels: { servico: sync, camada: api }
-      # - targets: ["seo:8000"]
-      #   labels: { servico: seo, camada: api }
+      - targets: ["sync:8000"]
+        labels: { servico: sync, camada: api }
+      - targets: ["seo:8000"]
+        labels: { servico: seo, camada: api }
+      - targets: ["worker:8000"]
+        labels: { servico: worker, camada: processamento }

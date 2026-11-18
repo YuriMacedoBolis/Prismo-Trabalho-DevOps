@@ -14,11 +14,11 @@ mais relevantes no topo e cuida do SEO — sem trabalho manual.
 Equipe de **3 integrantes**, o que corresponde a **1 projeto** conforme o
 enunciado (times de 2 a 4 participantes entregam um projeto).
 
-| Nome | Matrícula | GitHub | Frente principal |
-|---|---|---|---|
-| Yuri Macedo Bolis | _preencher_ | `YuriMacedoBolis` | Docker, Compose e CI/CD |
-| Vinicius Gabriel | _preencher_ | `GcmVinicius` | Kubernetes, HPA e observabilidade |
-| Daniel Lourenço | _preencher_ | `DanielCScience` | Backend, conector GitHub e frontend |
+| Nome | GitHub | Frente principal |
+|---|---|---|
+| Yuri Macedo Bolis | [`YuriMacedoBolis`](https://github.com/YuriMacedoBolis) | Docker, Compose e CI/CD |
+| Vinicius Gabriel | [`GcmVinicius`](https://github.com/GcmVinicius) | Kubernetes, HPA e observabilidade |
+| Daniel Lourenço | [`DanielCScience`](https://github.com/DanielCScience) | Backend, conector GitHub e frontend |
 
 > Cada integrante tem uma frente principal, mas **todos devem saber explicar a
 > configuração de Docker e Kubernetes** — é tema de arguição na apresentação.
@@ -294,6 +294,6 @@ variável de ambiente, então o código não muda entre ambientes.
 ## Entrega
 
 - Repositório **privado** no GitHub
-- Convite de colaborador para **`wagnerpequeno-sudo`** (wagner.pequeno@ceub.edu.br)
+- Convite de colaborador para **`wagnerpequeno-sudo`** (wagner.pequeno@ceub.edu.br) — enviado e aceito
 - Documentação do código: docstrings + OpenAPI em `/docs` de cada serviço
 - Diagramas UML em [`docs/uml/`](docs/uml/)

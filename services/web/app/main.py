@@ -55,14 +55,12 @@ MONITORED = [
     ("gateway", settings.gateway_url, "Ponto de entrada da API"),
     ("auth", settings.auth_url, "Contas, JWT e sessoes"),
     ("portfolio", settings.portfolio_url, "Projetos, temas e score"),
+    ("sync", settings.sync_url, "Conectores e despacho de sincronizacao"),
+    ("seo", settings.seo_url, "Meta tags, sitemap e auditoria"),
     ("web", "http://127.0.0.1:8000", "Renderizacao server-side"),
 ]
 
-PLANNED = [
-    ("sync", "Conector do GitHub", "Fase 3"),
-    ("worker", "Sincronizacao automatica (Celery)", "Fase 3"),
-    ("seo", "Meta tags, sitemap e auditoria", "Fase 3"),
-]
+PLANNED: list[tuple[str, str, str]] = []
 
 
 async def probe(name: str, base_url: str, descricao: str) -> dict:

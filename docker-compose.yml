@@ -147,6 +147,97 @@ services:
       migrator: { condition: service_completed_successfully }
 
   # ---------------------------------------------------------------------------
+  #  Sync — API dos conectores. Enfileira trabalho, nao o executa.
+  # ---------------------------------------------------------------------------
+  sync:
+    <<: *app-common
+    build:
+      context: .
+      dockerfile: services/sync/Dockerfile
+    image: prismo/sync:0.1.0
+    container_name: prismo-sync
+    environment:
+      SERVICE_NAME: sync
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      migrator: { condition: service_completed_successfully }
+
+  # ---------------------------------------------------------------------------
+  #  Worker — Celery. Executa a sincronizacao de fato.
+  #
+  #  E o servico que justifica o HorizontalPodAutoscaler: a carga de
+  #  sincronizacao e irregular por natureza, e escalar por tamanho de fila
+  #  responde a uma variacao real. `docker compose up --scale worker=3`
+  #  demonstra isso localmente.
+  # ---------------------------------------------------------------------------
+  worker:
+    <<: *app-common
+    build:
+      context: .
+      dockerfile: services/worker/Dockerfile
+    image: prismo/worker:0.1.0
+    # Sem `container_name`: nome fixo impede escalar, e este e exatamente o
+    # servico que precisa de varias replicas.
+    #   docker compose up -d --scale worker=3
+    # No Kubernetes o equivalente e `replicas` no Deployment, ajustado pelo
+    # HorizontalPodAutoscaler conforme o tamanho da fila.
+    environment:
+      SERVICE_NAME: worker
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      migrator: { condition: service_completed_successfully }
+
+  # ---------------------------------------------------------------------------
+  #  Beat — agendador. SINGLETON: nunca mais de uma instancia.
+  #
+  #  Duas instancias agendando a mesma tarefa a enfileirariam duas vezes a
+  #  cada intervalo. Por isso fica separado do worker, que escala a vontade.
+  #
+  #  Usa a MESMA imagem do worker, so com outro comando: o codigo e identico,
+  #  muda apenas o papel. Uma imagem a menos para construir e versionar.
+  # ---------------------------------------------------------------------------
+  beat:
+    <<: *app-common
+    build:
+      context: .
+      dockerfile: services/worker/Dockerfile
+    image: prismo/worker:0.1.0
+    container_name: prismo-beat
+    environment:
+      SERVICE_NAME: beat
+    # Guarda o ultimo horario em /tmp, gravavel pelo usuario nao-root. Sem
+    # isso o Beat reenfileiraria tudo a cada reinicio.
+    command: >
+      celery -A app.celery_app beat
+      --loglevel=INFO
+      --schedule=/tmp/celerybeat-schedule
+    # O healthcheck da imagem pergunta a um WORKER se ele responde; o Beat
+    # nao e worker e falharia sempre.
+    healthcheck:
+      disable: true
+    depends_on:
+      redis: { condition: service_healthy }
+      worker: { condition: service_started }
+
+  # ---------------------------------------------------------------------------
+  #  SEO — meta tags, dados estruturados, sitemap e auditoria.
+  # ---------------------------------------------------------------------------
+  seo:
+    <<: *app-common
+    build:
+      context: .
+      dockerfile: services/seo/Dockerfile
+    image: prismo/seo:0.1.0
+    container_name: prismo-seo
+    environment:
+      SERVICE_NAME: seo
+    depends_on:
+      postgres: { condition: service_healthy }
+      migrator: { condition: service_completed_successfully }
+
+  # ---------------------------------------------------------------------------
   #  Gateway — unico servico da API exposto para fora.
   # ---------------------------------------------------------------------------
   gateway:
@@ -163,6 +254,8 @@ services:
       redis: { condition: service_healthy }
       auth: { condition: service_started }
       portfolio: { condition: service_started }
+      sync: { condition: service_started }
+      seo: { condition: service_started }
 
   # ---------------------------------------------------------------------------
   #  Web — renderizacao server-side (landing, status, portfolio publico).

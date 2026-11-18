@@ -45,6 +45,9 @@ ROTAS_PUBLICAS = (
     "/api/v1/publico",
     "/api/v1/ping",
     "/api/v1/info",
+    # SEO e conteudo publico por definicao: existe para ser lido por
+    # buscador, que nunca tera token.
+    "/api/v1/seo",
 )
 
 # Prefixo -> servico de destino.
@@ -52,6 +55,9 @@ DESTINOS = {
     "/api/v1/auth": settings.auth_url,
     "/api/v1/portfolios": settings.portfolio_url,
     "/api/v1/publico": settings.portfolio_url,
+    "/api/v1/conexoes": settings.sync_url,
+    "/api/v1/sincronizacoes": settings.sync_url,
+    "/api/v1/seo": settings.seo_url,
 }
 
 # Headers que nao podem ser repassados: sao da conexao entre cliente e

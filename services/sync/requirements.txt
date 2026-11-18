@@ -1,0 +1,10 @@
+# O sync enfileira tarefas no Celery sem importar o codigo do worker:
+# `send_task` despacha pelo nome. Assim os dois servicos permanecem
+# independentes e podem ser implantados separadamente.
+celery[redis]==5.4.0
+# Kombu fixado: a serie 5.5 passou a exigir redis-py >= 6.1, enquanto a base
+# usa redis==5.2.1 no cliente assincrono dos servicos HTTP. A 5.4.2 e a
+# versao que acompanha o Celery 5.4 e funciona com a redis-py 5.x.
+kombu==5.4.2
+# Ver nota em services/worker/requirements.txt.
+packaging==24.2

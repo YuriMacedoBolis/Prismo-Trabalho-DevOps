@@ -1,0 +1,12 @@
+# O worker usa Celery e SQLAlchemy sincrono. Nao sobe servidor web, mas
+# publica /metrics por um servidor HTTP minimo do proprio prometheus_client.
+celery[redis]==5.4.0
+# Kombu fixado: a serie 5.5 passou a exigir redis-py >= 6.1, enquanto a base
+# usa redis==5.2.1 no cliente assincrono dos servicos HTTP. A 5.4.2 e a
+# versao que acompanha o Celery 5.4 e funciona com a redis-py 5.x.
+kombu==5.4.2
+psycopg[binary]==3.2.3
+# O transporte Redis do kombu importa `packaging` sem declara-lo como
+# dependencia. Fixado aqui para o build nao depender de ele vir por acaso
+# na arvore de outra biblioteca.
+packaging==24.2
