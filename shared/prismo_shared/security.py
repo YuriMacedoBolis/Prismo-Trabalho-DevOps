@@ -1,12 +1,10 @@
-"""Senhas e tokens.
+"""Tokens JWT.
 
-Duas escolhas que valem explicacao, porque sao perguntas de arguição:
+Hash de senha fica em `senhas.py`, que depende do Argon2: so os servicos que
+lidam com contas instalam aquela dependencia, enquanto todo servico que valida
+token usa este modulo.
 
-**Argon2id para senha, nao SHA-256.** Hash de proposito geral e rapido, e
-rapidez e exatamente o que o atacante quer: uma GPU testa bilhoes de SHA-256
-por segundo. Argon2id e deliberadamente lento e consome memoria, o que torna o
-ataque por forca bruta caro mesmo com hardware dedicado. Foi o vencedor da
-Password Hashing Competition e e a recomendacao atual da OWASP.
+Uma escolha que vale explicacao, porque e pergunta de arguicao:
 
 **Dois tokens, nao um.** O access token vale 30 minutos e viaja em toda
 requisicao; se vazar, o estrago tem prazo curto. O refresh token vale 14 dias,
@@ -21,49 +19,13 @@ from datetime import UTC, datetime, timedelta
 from typing import Any, Literal
 
 import jwt
-from argon2 import PasswordHasher
-from argon2.exceptions import InvalidHashError, VerifyMismatchError
-
 from .settings import get_settings
-
-# Parametros padrao da biblioteca, alinhados a recomendacao da OWASP
-# (19 MiB de memoria, 2 iteracoes, 1 thread).
-_hasher = PasswordHasher()
 
 TipoToken = Literal["access", "refresh"]
 
 
 class ErroDeToken(Exception):
     """Token ausente, expirado, adulterado ou do tipo errado."""
-
-
-# --------------------------------------------------------------------------
-#  Senhas
-# --------------------------------------------------------------------------
-
-
-def gerar_hash_senha(senha: str) -> str:
-    return _hasher.hash(senha)
-
-
-def verificar_senha(senha: str, hash_armazenado: str) -> bool:
-    try:
-        _hasher.verify(hash_armazenado, senha)
-        return True
-    except (VerifyMismatchError, InvalidHashError):
-        return False
-
-
-def precisa_rehash(hash_armazenado: str) -> bool:
-    """True quando o hash foi gerado com parametros mais fracos que os atuais.
-
-    Permite fortalecer as senhas gradualmente: no proximo login bem-sucedido o
-    hash e regravado com os parametros novos, sem pedir nada ao usuario.
-    """
-    try:
-        return _hasher.check_needs_rehash(hash_armazenado)
-    except InvalidHashError:
-        return True
 
 
 # --------------------------------------------------------------------------

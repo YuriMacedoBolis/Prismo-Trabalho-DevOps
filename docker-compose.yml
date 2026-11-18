@@ -89,6 +89,64 @@ services:
       start_period: 10s
 
   # ---------------------------------------------------------------------------
+  #  Migrator — execucao unica: aplica as migrations e encerra.
+  #
+  #  Nao e um servico: sobe, roda `alembic upgrade head`, sai com codigo 0.
+  #  Os servicos de dominio esperam por ele com
+  #  `condition: service_completed_successfully`, entao nenhum deles chega a
+  #  consultar uma tabela que ainda nao existe.
+  #
+  #  Por que nao migrar no startup de cada servico: com varias replicas, todas
+  #  aplicariam DDL ao mesmo tempo na mesma tabela. Aqui exatamente um
+  #  processo migra. No Kubernetes o equivalente e um Job ou um initContainer.
+  # ---------------------------------------------------------------------------
+  migrator:
+    build:
+      context: .
+      dockerfile: db/Dockerfile
+    image: prismo/migrator:0.1.0
+    container_name: prismo-migrator
+    env_file: [.env]
+    networks: [prismo]
+    restart: "no"
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  # ---------------------------------------------------------------------------
+  #  Auth — contas, autenticacao e emissao de tokens. Dono do schema `auth`.
+  # ---------------------------------------------------------------------------
+  auth:
+    <<: *app-common
+    build:
+      context: .
+      dockerfile: services/auth/Dockerfile
+    image: prismo/auth:0.1.0
+    container_name: prismo-auth
+    environment:
+      SERVICE_NAME: auth
+    # Sem `ports`: so o gateway alcanca este servico, pela rede interna. E o
+    # que permite confiar no header X-Usuario-Id que ele repassa.
+    depends_on:
+      postgres: { condition: service_healthy }
+      migrator: { condition: service_completed_successfully }
+
+  # ---------------------------------------------------------------------------
+  #  Portfolio — perfis, projetos, temas e score. Dono do schema `portfolio`.
+  # ---------------------------------------------------------------------------
+  portfolio:
+    <<: *app-common
+    build:
+      context: .
+      dockerfile: services/portfolio/Dockerfile
+    image: prismo/portfolio:0.1.0
+    container_name: prismo-portfolio
+    environment:
+      SERVICE_NAME: portfolio
+    depends_on:
+      postgres: { condition: service_healthy }
+      migrator: { condition: service_completed_successfully }
+
+  # ---------------------------------------------------------------------------
   #  Gateway — unico servico da API exposto para fora.
   # ---------------------------------------------------------------------------
   gateway:
@@ -103,6 +161,8 @@ services:
     ports: ["8001:8000"]
     depends_on:
       redis: { condition: service_healthy }
+      auth: { condition: service_started }
+      portfolio: { condition: service_started }
 
   # ---------------------------------------------------------------------------
   #  Web — renderizacao server-side (landing, status, portfolio publico).

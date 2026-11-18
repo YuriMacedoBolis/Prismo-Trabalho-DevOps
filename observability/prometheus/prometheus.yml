@@ -32,11 +32,11 @@ scrape_configs:
         labels: { servico: gateway, camada: api }
       - targets: ["web:8000"]
         labels: { servico: web, camada: frontend }
-      # Fases 2 e 3: descomentar conforme cada servico sobe.
-      # - targets: ["auth:8000"]
-      #   labels: { servico: auth, camada: api }
-      # - targets: ["portfolio:8000"]
-      #   labels: { servico: portfolio, camada: api }
+      - targets: ["auth:8000"]
+        labels: { servico: auth, camada: api }
+      - targets: ["portfolio:8000"]
+        labels: { servico: portfolio, camada: api }
+      # Fase 3: descomentar conforme cada servico sobe.
       # - targets: ["sync:8000"]
       #   labels: { servico: sync, camada: api }
       # - targets: ["seo:8000"]

@@ -53,12 +53,12 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 # Servicos monitorados na pagina /status. A lista cresce a cada fase.
 MONITORED = [
     ("gateway", settings.gateway_url, "Ponto de entrada da API"),
+    ("auth", settings.auth_url, "Contas, JWT e sessoes"),
+    ("portfolio", settings.portfolio_url, "Projetos, temas e score"),
     ("web", "http://127.0.0.1:8000", "Renderizacao server-side"),
 ]
 
 PLANNED = [
-    ("auth", "Contas, JWT e token do GitHub", "Fase 2"),
-    ("portfolio", "Projetos, temas e score de destaque", "Fase 2"),
     ("sync", "Conector do GitHub", "Fase 3"),
     ("worker", "Sincronizacao automatica (Celery)", "Fase 3"),
     ("seo", "Meta tags, sitemap e auditoria", "Fase 3"),

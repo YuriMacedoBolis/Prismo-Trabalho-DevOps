@@ -1,0 +1,2 @@
+# O auth acessa o banco: instala tambem shared/requirements-db.txt.
+# Sem dependencia exclusiva alem disso.
