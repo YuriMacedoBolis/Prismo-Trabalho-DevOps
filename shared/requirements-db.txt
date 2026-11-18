@@ -1,0 +1,10 @@
+# Dependencias de quem fala com o banco (auth, portfolio, worker, migrator).
+#
+# Estao separadas de requirements.txt de proposito: o gateway e o web nao
+# acessam o banco, e instalar SQLAlchemy + asyncpg neles so engordaria a imagem
+# sem motivo. Cada Dockerfile instala apenas o que o seu servico usa.
+sqlalchemy[asyncio]==2.0.36
+asyncpg==0.30.0
+alembic==1.14.0
+argon2-cffi==23.1.0
+email-validator==2.2.0

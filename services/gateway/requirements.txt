@@ -1,4 +1,3 @@
-# Dependencias exclusivas do gateway.
-# As comuns estao em shared/requirements.txt e sao instaladas antes desta,
-# em uma camada de cache separada no Dockerfile.
-python-jose[cryptography]==3.3.0
+# O gateway nao tem dependencia exclusiva: valida JWT com PyJWT, que esta na
+# base, e nao acessa o banco. Arquivo mantido para a estrutura ficar uniforme
+# entre os servicos.
