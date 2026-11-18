@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Testa a conexao com o Supabase antes de escrever qualquer codigo de banco.
+"""Testa a conexao com o Postgres da stack.
 
-Vale rodar isto na Fase 1: o erro mais comum e a connection string, e descobrir
-isso agora economiza horas de depuracao na Fase 2.
+Roda a partir do Windows, de fora dos containers, entao troca o host `postgres`
+(nome do servico, que so existe na rede interna do Docker) por `localhost`, onde
+a porta esta publicada. O banco e o mesmo; muda so o caminho ate ele.
 
 Requer:  pip install "psycopg[binary]"
-Uso:     python scripts/check_supabase.py
+Uso:     python scripts/check_db.py
 """
 
 from __future__ import annotations
@@ -46,22 +47,28 @@ def main() -> int:
     env = carregar_env()
     url = os.environ.get("DATABASE_URL") or env.get("DATABASE_URL", "")
 
-    if not url or "SEU_REF" in url or "SUA_SENHA" in url:
-        print(f"\n{VERMELHO}DATABASE_URL nao configurada.{RESET}")
-        print(f"{CINZA}Preencha no .env com a URI do painel do Supabase:")
-        print("  Project Settings > Database > Connection string > URI")
-        print(f"  Use a porta 6543 (pooler), nao a 5432.{RESET}\n")
+    if not url:
+        print()
+        print(f"{VERMELHO}DATABASE_URL nao configurada no .env.{RESET}")
+        print(f"{CINZA}Valor esperado:")
+        print("  postgresql+asyncpg://prismo:prismo@postgres:5432/prismo")
+        print(f"Copie o modelo com: cp .env.example .env{RESET}")
+        print()
         return 1
 
-    print(f"\n{CINZA}Conectando em {mascarar(url)}{RESET}")
-
-    if ":5432" in url:
-        print(f"{AMARELO}  Aviso: porta 5432 (conexao direta). Prefira a 6543,")
-        print(f"  que usa o pooler e aguenta muito mais conexoes.{RESET}")
 
     # psycopg usa o esquema postgresql://; o sufixo +asyncpg e so para o
     # SQLAlchemy async e precisa sair aqui.
     url_sync = url.replace("+asyncpg", "").replace("+psycopg", "")
+
+    # `postgres` so resolve dentro da rede do Docker. Rodando no Windows, o
+    # caminho ate o mesmo banco e a porta publicada no host.
+    if "@postgres:" in url_sync:
+        url_sync = url_sync.replace("@postgres:", "@localhost:")
+        print(f"{AMARELO}  host `postgres` trocado por `localhost`:"
+              f" execucao fora dos containers{RESET}")
+
+    print(f"{CINZA}Conectando em {mascarar(url_sync)}{RESET}")
 
     try:
         import psycopg

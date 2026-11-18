@@ -53,7 +53,7 @@ package "Estado" {
   database "Redis\ncache · fila · locks" as redis
 }
 
-cloud "Supabase\n(Postgres)" as supabase
+cloud "Supabase\n(Postgres)" as postgres
 cloud "GitHub API" as github
 cloud "Google Drive" as drive
 
@@ -78,15 +78,15 @@ gateway --> portfolio
 gateway --> sync
 gateway --> seo
 
-auth --> supabase
-portfolio --> supabase
-seo --> supabase
+auth --> postgres
+portfolio --> postgres
+seo --> postgres
 
 sync --> redis : enfileira tarefa
 worker --> redis : consome fila
 worker --> github : importa repos
 worker --> drive : grava thumbnails
-worker --> supabase : grava projetos
+worker --> postgres : grava projetos
 worker --> portfolio : recalcula score
 
 prometheus --> gateway : raspa /metrics
@@ -111,10 +111,11 @@ note right of worker
   por natureza.
 end note
 
-note bottom of redis
-  Unico componente com estado
-  dentro do cluster. E nele que
-  demonstramos PVC e StatefulSet.
+note bottom of postgres
+  Componente com estado: StatefulSet
+  + PersistentVolumeClaim. E aqui que
+  se demonstra o que acontece com os
+  dados quando o pod morre. Ver ADR 001.
 end note
 
 @enduml

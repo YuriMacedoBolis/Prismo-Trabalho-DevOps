@@ -17,8 +17,8 @@ enunciado (times de 2 a 4 participantes entregam um projeto).
 | Nome | Matrícula | GitHub | Frente principal |
 |---|---|---|---|
 | Yuri Macedo Bolis | _preencher_ | `YuriMacedoBolis` | Docker, Compose e CI/CD |
-| Vinicius Gabriel | _preencher_ | _preencher_ | Kubernetes, HPA e observabilidade |
-| Daniel Lourenço | _preencher_ | _preencher_ | Backend, conector GitHub e frontend |
+| Vinicius Gabriel | _preencher_ | `GcmVinicius` | Kubernetes, HPA e observabilidade |
+| Daniel Lourenço | _preencher_ | `DanielCScience` | Backend, conector GitHub e frontend |
 
 > Cada integrante tem uma frente principal, mas **todos devem saber explicar a
 > configuração de Docker e Kubernetes** — é tema de arguição na apresentação.
@@ -86,9 +86,9 @@ Sete serviços de aplicação, cada um com uma responsabilidade única.
           ┌───────────────────┴──────┬───────┴──────┬───────┴───────────┐
           ▼                          ▼              ▼                   ▼
    ┌─────────────┐          ┌─────────────┐  ┌─────────────┐   ┌─────────────┐
-   │  Supabase   │          │    Redis    │  │   Google    │   │ Prometheus  │
-   │ (Postgres   │          │ cache ·fila │  │    Drive    │   │  + Grafana  │
-   │  gerenciado)│          │ rate limit  │  │  (arquivos) │   │  + cAdvisor │
+   │  Postgres   │          │    Redis    │  │   Google    │   │ Prometheus  │
+   │ dados ·PVC  │          │ cache ·fila │  │    Drive    │   │  + Grafana  │
+   │ StatefulSet │          │ rate limit  │  │  (arquivos) │   │             │
    └─────────────┘          └─────────────┘  └─────────────┘   └─────────────┘
 ```
 
@@ -111,7 +111,7 @@ arquitetura, com a justificativa de cada uma, em [`docs/decisoes/`](docs/decisoe
 
 | Componente | Função | Onde roda |
 |---|---|---|
-| **Supabase** | Postgres gerenciado. Fonte de verdade dos dados | Externo |
+| **Postgres 16** | Fonte de verdade dos dados. Volume persistente | Container |
 | **Redis** | Cache de render, fila do Celery, rate limit, locks | Container |
 | **Google Drive** | Armazenamento de imagens (service account) | Externo |
 | **Prometheus** | Coleta de métricas, a cada 15s | Container |
@@ -125,7 +125,8 @@ arquitetura, com a justificativa de cada uma, em [`docs/decisoes/`](docs/decisoe
 
 - Docker Desktop com backend WSL2
 - Python 3.12 (só para os scripts auxiliares)
-- Uma conta no [Supabase](https://supabase.com) (plano free)
+
+Nada além disso: a stack é autocontida, sem cadastro nem chave de API.
 
 ### Passo a passo
 
@@ -135,11 +136,11 @@ cd prismo
 
 # 1. Configuração
 cp .env.example .env     # ou: ./dev.ps1 setup
-#    preencha DATABASE_URL e JWT_SECRET
+#    gere um JWT_SECRET; a DATABASE_URL já vem pronta para o Postgres da stack
 
-# 2. Confirme que o Supabase responde
+# 2. (opcional) Confirme que o banco responde
 pip install "psycopg[binary]"
-python scripts/check_supabase.py
+python scripts/check_db.py
 
 # 3. Suba a aplicação
 docker compose up --build -d          # ou: make up / ./dev.ps1 up
@@ -161,22 +162,27 @@ python scripts/smoke_test.py          # ou: make smoke
 | API (Swagger) | http://localhost:8001/docs | — |
 | Grafana | http://localhost:3000 | `admin` / `prismo` |
 | Prometheus | http://localhost:9090 | — |
+| Postgres | `localhost:5432` | `prismo` / `prismo` |
 
-### Trocar o Supabase pelo Postgres local
+### O banco
 
-Supabase é Postgres, então a troca é só a variável de ambiente — nenhuma linha
-de código muda:
+O Postgres roda como serviço da stack, com volume persistente. A `DATABASE_URL`
+já vem configurada no `.env.example` e aponta para o nome do serviço:
 
-```bash
-# No .env:
-DATABASE_URL=postgresql+asyncpg://prismo:prismo@postgres:5432/prismo
-
-docker compose --profile local-db up -d
+```
+postgresql+asyncpg://prismo:prismo@postgres:5432/prismo
 ```
 
-Mantemos essa opção por dois motivos: desenvolver sem rede e sem consumir cota,
-e poder demonstrar `PersistentVolumeClaim` e `StatefulSet` no Kubernetes, o que
-um banco gerenciado não permite mostrar.
+O host é `postgres` porque o DNS interno do Docker resolve nomes de serviço. De
+**fora** dos containers — DBeaver, pgAdmin, um script no Windows — o mesmo banco
+responde em `localhost:5432`, sem o sufixo `+asyncpg`.
+
+A senha é trivial de propósito: banco local e descartável. Em produção ela vem
+de um `Secret` do Kubernetes. A escolha de rodar o banco no cluster em vez de
+usar um serviço gerenciado, com os prós e contras, está no
+[ADR 001](docs/decisoes/001-postgres-no-cluster.md).
+
+> `docker compose down -v` (e o alvo `make nuke`) **apaga o volume do banco**.
 
 ---
 
@@ -260,7 +266,7 @@ prismo/
 │   ├── prometheus/             # scrape config + alertas
 │   └── grafana/                # datasource + dashboards, provisionados
 ├── k8s/                        # manifests (Fase 5)
-├── scripts/                    # smoke test, verificação do Supabase
+├── scripts/                    # smoke test, verificação do banco
 └── docs/
     ├── uml/                    # diagramas em PlantUML
     └── decisoes/               # ADRs

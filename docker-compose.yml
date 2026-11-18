@@ -3,7 +3,6 @@
 #
 #  Suba com:  docker compose up --build
 #  Com observabilidade:  docker compose -f docker-compose.yml -f docker-compose.obs.yml up --build
-#  Com Postgres local em vez do Supabase:  docker compose --profile local-db up
 #
 #  Note o `context: .` em todos os builds: o contexto e a raiz do repositorio
 #  porque cada imagem precisa copiar `shared/` junto com o seu proprio codigo.
@@ -30,7 +29,7 @@ x-app-common: &app-common
 services:
   # ---------------------------------------------------------------------------
   #  Redis — cache, fila do Celery, rate limiting e locks distribuidos.
-  #  Unico servico com estado dentro do cluster (o banco e o Supabase).
+  #  Estado descartavel: o que vale aqui pode ser perdido sem prejuizo.
   # ---------------------------------------------------------------------------
   redis:
     image: redis:7.4-alpine
@@ -43,7 +42,7 @@ services:
       --maxmemory-policy allkeys-lru
     # allkeys-lru: ao encher, o Redis descarta a chave menos usada em vez de
     # recusar escrita. Correto aqui porque todo o conteudo e descartavel:
-    # cache perdido se refaz, e a verdade esta sempre no Supabase.
+    # cache perdido se refaz, e a verdade esta sempre no Postgres.
     ports: ["6379:6379"]
     volumes: [redis-data:/data]
     networks: [prismo]
@@ -53,6 +52,41 @@ services:
       timeout: 3s
       retries: 5
       start_period: 5s
+
+  # ---------------------------------------------------------------------------
+  #  Postgres — banco da aplicacao, fonte de verdade dos dados.
+  #
+  #  Roda no proprio cluster, nao em servico gerenciado. Com isso assumimos o
+  #  backup, e em troca ganhamos o que mais importa para este trabalho: e aqui
+  #  que `StatefulSet` e `PersistentVolumeClaim` sao demonstrados no Kubernetes.
+  #  Ver docs/decisoes/001.
+  #
+  #  A senha e trivial de proposito: banco local, descartavel, que nunca sai da
+  #  maquina de quem desenvolve. Em producao vem de um Secret do Kubernetes.
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: prismo-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: prismo
+      POSTGRES_PASSWORD: prismo
+      POSTGRES_DB: prismo
+      # Acelera a inicializacao em disco local; em producao seria removido,
+      # porque desliga a garantia de durabilidade apos queda abrupta.
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports: ["5432:5432"]
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    networks: [prismo]
+    healthcheck:
+      # pg_isready so responde quando o banco aceita conexao de verdade. Os
+      # servicos que dependem dele esperam por este healthcheck, e nao pelo
+      # container ter sido criado.
+      test: ["CMD-SHELL", "pg_isready -U prismo -d prismo"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
   # ---------------------------------------------------------------------------
   #  Gateway — unico servico da API exposto para fora.
@@ -86,33 +120,6 @@ services:
     depends_on:
       redis: { condition: service_healthy }
       gateway: { condition: service_started }
-
-  # ---------------------------------------------------------------------------
-  #  Postgres local — OPCIONAL, perfil `local-db`.
-  #
-  #  O banco do projeto e o Supabase. Este container existe por dois motivos:
-  #    1. desenvolver e rodar teste sem rede e sem gastar cota;
-  #    2. poder demonstrar PersistentVolumeClaim e StatefulSet no Kubernetes,
-  #       que o Supabase gerenciado nao permite mostrar.
-  #  Supabase e Postgres, entao e so trocar DATABASE_URL: zero mudanca de codigo.
-  # ---------------------------------------------------------------------------
-  postgres:
-    image: postgres:16-alpine
-    container_name: prismo-postgres
-    profiles: ["local-db"]
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: prismo
-      POSTGRES_PASSWORD: prismo
-      POSTGRES_DB: prismo
-    ports: ["5432:5432"]
-    volumes: [postgres-data:/var/lib/postgresql/data]
-    networks: [prismo]
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U prismo -d prismo"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
 
 networks:
   prismo:

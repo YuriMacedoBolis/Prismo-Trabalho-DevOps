@@ -27,14 +27,14 @@ class Settings(BaseSettings):
     environment: Literal["dev", "staging", "prod"] = "dev"
     log_level: str = "INFO"
 
-    # --- Banco de dados (Supabase) ---------------------------------------
-    # Supabase e Postgres gerenciado, entao a URL tem o formato padrao do
-    # Postgres. Para usar o container local em vez do Supabase, basta apontar
-    # esta variavel para postgresql+asyncpg://prismo:prismo@postgres:5432/prismo
-    database_url: str = ""
-    supabase_url: str = ""
-    supabase_anon_key: str = ""
-    supabase_service_key: str = ""
+    # --- Banco de dados ---------------------------------------------------
+    # Postgres rodando no proprio cluster. O host e o nome do servico, que o
+    # DNS interno do Docker (e o do Kubernetes) resolve. De fora dos
+    # containers o mesmo banco responde em localhost:5432.
+    database_url: str = "postgresql+asyncpg://prismo:prismo@postgres:5432/prismo"
+    db_pool_size: int = 5
+    db_max_overflow: int = 10
+    db_echo: bool = False
 
     # --- Redis ------------------------------------------------------------
     redis_url: str = "redis://redis:6379/0"

@@ -7,8 +7,8 @@
 ## Contexto
 
 O portfólio precisa guardar imagens: avatar, capas de projeto e thumbnails
-importados do GitHub. As opções consideradas foram MinIO em container,
-Supabase Storage, e Google Drive via service account.
+importados do GitHub. As opções consideradas foram MinIO em container
+e Google Drive via service account.
 
 ## Decisão
 
@@ -56,5 +56,7 @@ aceitar descumprir um requisito.
 - A primeira visualização de cada imagem é lenta; as seguintes não.
 - A chave da service account é um segredo de verdade: `Secret` no Kubernetes,
   montado em `/run/secrets/google-sa.json`, e no `.gitignore`.
-- Se a taxa de acerto do cache não se sustentar, a alternativa já mapeada é o
-  Supabase Storage, que tem CDN e usa a conta que já temos.
+- Se a taxa de acerto do cache não se sustentar, a alternativa já mapeada é
+  MinIO como serviço da stack: object storage compatível com S3, que roda em
+  container ao lado do Postgres e mantém o sistema autocontido, na mesma linha
+  do [ADR 001](001-postgres-no-cluster.md).

@@ -2,7 +2,7 @@
 #  Arquivos que NAO devem entrar no contexto de build.
 #
 #  Serve a dois propositos. Seguranca: sem esta lista, o `.env` com as
-#  credenciais do Supabase seria copiado para dentro da imagem e qualquer
+#  credenciais do banco seria copiado para dentro da imagem e qualquer
 #  pessoa com acesso a ela leria os segredos com `docker history`. Velocidade:
 #  o contexto e enviado inteiro ao daemon do Docker a cada build, e mandar
 #  .venv/ e node_modules/ torna isso lento sem necessidade.
